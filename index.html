@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="icon" type="image/png" href="icon.png"> <title>The Ultimate Clicker Game</title>
+    <link rel="icon" type="image/png" href="icon.png"> 
+    <title>The Ultimate Clicker Game</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -20,15 +21,13 @@
 
     <div class="game-container">
         <div class="image-container" id="image-wrapper">
-            <img src="icon.png" alt="Click Me" class="click-target" id="target-img">
+            <img src="Icon.png" alt="Click Me" class="click-target" id="target-img">
         </div>
-        <label class="upload-btn" for="file-input">Upload Custom Pic</label>
-        <input type="file" id="file-input" accept="image/*">
-        </div>
-        <label class="upload-btn" for="file-input">Upload Custom Pic</label>
-        <input type="file" id="file-input" accept="image/*">
         
-        <div style="display: flex; gap: 10px; margin-top: 5px;">
+        <label class="upload-btn" for="file-input">Upload Custom Pic</label>
+        <input type="file" id="file-input" accept="image/*" style="display: none;">
+        
+        <div style="display: flex; gap: 10px; margin-top: 15px;">
             <button class="music-btn" id="music-toggle-btn">🎵 Music: OFF</button>
             <button class="reset-btn" id="reset-game-btn">Reset Progress</button>
         </div>
