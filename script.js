@@ -11,7 +11,7 @@ let currentCPS = 0;
 let combo = 0;
 let comboTimer = null;
 
-// Audio System Variables (CRANKED UP)
+// Audio System Variables (UNLOCKED LOUD MODE)
 let audioCtx = null;
 let musicInterval = null;
 let isMusicPlaying = false;
@@ -30,16 +30,16 @@ const musicBtn = document.getElementById('music-toggle-btn');
 // Create combo element dynamically
 const comboDisplay = document.createElement('div');
 comboDisplay.className = 'combo-box';
-if (document.querySelector('.header-container')) {
-    document.querySelector('.header-container').appendChild(comboDisplay);
+const headerContainer = document.querySelector('.header-container');
+if (headerContainer) {
+    headerContainer.appendChild(comboDisplay);
 }
 
-// Init views
-scoreDisplay.textContent = clicks;
-highScoreDisplay.textContent = highScore;
-targetImg.style.filter = activeFilter;
+// Initialize application views
+if (scoreDisplay) scoreDisplay.textContent = clicks;
+if (highScoreDisplay) highScoreDisplay.textContent = highScore;
+if (targetImg) targetImg.style.filter = activeFilter;
 document.body.style.background = activeTheme;
-updateAutoClickerUI();
 
 function initAudio() {
     if (!audioCtx) {
@@ -47,71 +47,25 @@ function initAudio() {
     }
 }
 
-// LOUD Click Sounds
-function playInteractiveSound(isAuto = false) {
+// DOUBLE-AMPLIFIED LOUD Click Sounds
+window.playInteractiveSound = function(isAuto = false) {
     initAudio();
     if (!audioCtx) return;
 
-    const osc = audioCtx.createOscillator();
-    const gain = audioCtx.createGain();
-    
-    osc.type = combo > 5 && !isAuto ? 'sawtooth' : 'sine';
-    const baseFreq = isAuto ? 180 : 300 + (combo * 40); 
-    osc.frequency.setValueAtTime(baseFreq, audioCtx.currentTime);
-    
-    // MAX VOLUME MULTIPLIERS FOR CLICKS
-    gain.gain.setValueAtTime(isAuto ? 0.25 : 0.90, audioCtx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.12);
-    
-    osc.connect(gain);
-    gain.connect(audioCtx.destination);
-    osc.start();
-    osc.stop(audioCtx.currentTime + 0.12);
-}
-
-// LOUD Background Music Loop
-function startBackgroundMusic() {
-    initAudio();
-    if (isMusicPlaying) return;
-    isMusicPlaying = true;
-    if (musicBtn) musicBtn.textContent = "🎵 Music: ON";
-
-    musicInterval = setInterval(() => {
-        if (!audioCtx) return;
-        
-        const osc = audioCtx.createOscillator();
-        const gain = audioCtx.createGain();
-        
-        osc.type = 'square'; // Changed to 'square' wave because it is naturally much louder and crunchier!
-        
-        let freq = melody[currentStep];
-        if (combo > 5) freq *= 1.5; 
-        
-        osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
-        
-      // DOUBLE-AMPLIFIED LOUD Click Sounds
-function playInteractiveSound(isAuto = false) {
-    initAudio();
-    if (!audioCtx) return;
-
-    // We spawn MULTIPLE oscillators at the exact same time to layer the sound
     for (let i = 0; i < 3; i++) {
         const osc = audioCtx.createOscillator();
         const stage1Gain = audioCtx.createGain();
-        const stage2Gain = audioCtx.createGain(); // The Booster Stage
+        const stage2Gain = audioCtx.createGain(); 
         
-        osc.type = 'sawtooth'; // Harsh, crunchy retro wave
+        osc.type = 'sawtooth'; 
         const baseFreq = isAuto ? (150 + i * 10) : (300 + (combo * 40) + i * 15); 
         osc.frequency.setValueAtTime(baseFreq, audioCtx.currentTime);
         
-        // Max out Stage 1
         stage1Gain.gain.setValueAtTime(isAuto ? 0.4 : 1.0, audioCtx.currentTime);
         stage1Gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.15);
         
-        // Max out Stage 2 (Force amplification)
         stage2Gain.gain.setValueAtTime(isAuto ? 1.5 : 3.0, audioCtx.currentTime);
         
-        // Chain them together: Osc -> Amp 1 -> Amp 2 -> Speakers
         osc.connect(stage1Gain);
         stage1Gain.connect(stage2Gain);
         stage2Gain.connect(audioCtx.destination);
@@ -131,24 +85,22 @@ function startBackgroundMusic() {
     musicInterval = setInterval(() => {
         if (!audioCtx) return;
         
-        // Overlap two square waves slightly detuned for massive retro chiptune volume
         [0, 4].forEach((detuneOffset) => {
             const osc = audioCtx.createOscillator();
             const amp1 = audioCtx.createGain();
-            const amp2 = audioCtx.createGain(); // Booster wall
+            const amp2 = audioCtx.createGain(); 
             
-            osc.type = 'square'; // The loudest raw wave type
+            osc.type = 'square'; 
             
             let freq = melody[currentStep];
             if (combo > 5) freq *= 1.5; 
             
             osc.frequency.setValueAtTime(freq + detuneOffset, audioCtx.currentTime);
             
-            // Blast both gain nodes
             amp1.gain.setValueAtTime(0.8, audioCtx.currentTime);
             amp1.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.24);
             
-            amp2.gain.setValueAtTime(2.5, audioCtx.currentTime); // Force boost past browser compression
+            amp2.gain.setValueAtTime(2.5, audioCtx.currentTime); 
             
             osc.connect(amp1);
             amp1.connect(amp2);
@@ -162,27 +114,45 @@ function startBackgroundMusic() {
     }, 250);
 }
 
+function stopBackgroundMusic() {
+    clearInterval(musicInterval);
+    isMusicPlaying = false;
+    if (musicBtn) musicBtn.textContent = "🎵 Music: OFF";
+}
+
+if (musicBtn) {
+    musicBtn.addEventListener('click', () => {
+        if (isMusicPlaying) {
+            stopBackgroundMusic();
+        } else {
+            startBackgroundMusic();
+        }
+    });
+}
+
 // Manual User Click Trigger
-targetImg.addEventListener('click', (e) => {
-    handleCombo();
-    
-    const pointsGained = 1 + Math.floor(combo / 5);
-    clicks += pointsGained;
-    
-    processScoreUpdate();
-    playInteractiveSound(false);
-    calculateTiltPhysics(e);
-    spawnSparks(e);
-    spawnFloatingText(e, `+${pointsGained}`);
-});
+if (targetImg) {
+    targetImg.addEventListener('click', (e) => {
+        handleCombo();
+        
+        const pointsGained = 1 + Math.floor(combo / 5);
+        clicks += pointsGained;
+        
+        processScoreUpdate();
+        window.playInteractiveSound(false);
+        calculateTiltPhysics(e);
+        spawnSparks(e);
+        spawnFloatingText(e, `+${pointsGained}`);
+    });
+}
 
 function processScoreUpdate() {
-    scoreDisplay.textContent = clicks;
+    if (scoreDisplay) scoreDisplay.textContent = clicks;
     localStorage.setItem('clicks', clicks);
 
     if (clicks > highScore) {
         highScore = clicks;
-        highScoreDisplay.textContent = highScore;
+        if (highScoreDisplay) highScoreDisplay.textContent = highScore;
         localStorage.setItem('highScore', highScore);
     }
     updateShopButtons();
@@ -207,6 +177,7 @@ function handleCombo() {
 }
 
 function calculateTiltPhysics(e) {
+    if (!targetImg) return;
     const rect = targetImg.getBoundingClientRect();
     const x = (e.clientX - rect.left) / rect.width - 0.5;
     const y = (e.clientY - rect.top) / rect.height - 0.5;
@@ -220,6 +191,7 @@ function calculateTiltPhysics(e) {
 }
 
 function spawnSparks(e) {
+    if (!imageWrapper) return;
     const rect = imageWrapper.getBoundingClientRect();
     const clickX = e.clientX - rect.left;
     const clickY = e.clientY - rect.top;
@@ -245,6 +217,7 @@ function spawnSparks(e) {
 }
 
 function spawnFloatingText(e, text) {
+    if (!imageWrapper) return;
     let x, y;
     if (e) {
         const rect = imageWrapper.getBoundingClientRect();
@@ -266,7 +239,8 @@ function spawnFloatingText(e, text) {
     setTimeout(() => float.remove(), 400);
 }
 
-function buyAutoClicker(cpsValue, baseCost, countId, btnId) {
+// Exposed globally to match HTML onclick properties
+window.buyAutoClicker = function(cpsValue, baseCost, countId, btnId) {
     const currentOwned = cpsValue === 1 ? autoClickers.type1 : autoClickers.type2;
     const calculatedCost = Math.floor(baseCost * Math.pow(1.15, currentOwned));
 
@@ -306,11 +280,13 @@ setInterval(() => {
     if (currentCPS > 0) {
         clicks += currentCPS;
         processScoreUpdate();
-        playInteractiveSound(true);
+        window.playInteractiveSound(true);
         spawnFloatingText(null, `+${currentCPS}`);
         
-        targetImg.style.transform = 'scale(0.97)';
-        setTimeout(() => targetImg.style.transform = 'scale(1)', 50);
+        if (targetImg) {
+            targetImg.style.transform = 'scale(0.97)';
+            setTimeout(() => targetImg.style.transform = 'scale(1)', 50);
+        }
     }
 }, 1000);
 
@@ -325,7 +301,7 @@ if (resetBtn) {
             
             activeFilter = 'none';
             activeTheme = 'linear-gradient(135deg, #12121f, #1a1a2e)';
-            targetImg.style.filter = activeFilter;
+            if (targetImg) targetImg.style.filter = activeFilter;
             document.body.style.background = activeTheme;
             localStorage.setItem('activeFilter', activeFilter);
             localStorage.setItem('activeTheme', activeTheme);
@@ -337,17 +313,17 @@ if (resetBtn) {
     });
 }
 
-function buyFilter(filterStyle, btnId, cost) {
+window.buyFilter = function(filterStyle, btnId, cost) {
     if (clicks >= cost) {
         clicks -= cost;
         activeFilter = filterStyle;
-        targetImg.style.filter = filterStyle;
+        if (targetImg) targetImg.style.filter = filterStyle;
         localStorage.setItem('activeFilter', filterStyle);
         processScoreUpdate();
     }
 }
 
-function buyTheme(themeStyle, btnId, cost) {
+window.buyTheme = function(themeStyle, btnId, cost) {
     if (clicks >= cost) {
         clicks -= cost;
         activeTheme = themeStyle;
@@ -381,10 +357,13 @@ if(fileInput) {
         const file = e.target.files[0];
         if (file) {
             const reader = new FileReader();
-            reader.onload = (event) => targetImg.src = event.target.result;
+            reader.onload = (event) => {
+                if (targetImg) targetImg.src = event.target.result;
+            };
             reader.readAsDataURL(file);
         }
     });
 }
 
+updateAutoClickerUI();
 updateShopButtons();
