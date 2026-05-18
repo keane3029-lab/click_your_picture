@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Ultimate Clicker Game</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div class="header-container">
+        <h1>Click Your Picture!</h1>
+    </div>
+
+    <div class="stats-box">
+        <div>Clicks: <span class="counter" id="score">0</span></div>
+        <div>CPS: <span id="cps-display" style="color: #6be0ff;">0</span></div>
+        <div>High Score: <span id="high-score" style="color: #ffdd6b;">0</span></div>
+    </div>
+
+    <div class="game-container">
+        <div class="image-container" id="image-wrapper">
+            <img src="https://picsum.photos/300" alt="Click Me" class="click-target" id="target-img">
+        </div>
+        <label class="upload-btn" for="file-input">Upload Custom Pic</label>
+        <input type="file" id="file-input" accept="image/*">
+        
+        <button class="reset-btn" id="reset-game-btn">Reset Current Progress</button>
+    </div>
+
+    <div class="shop-container">
+        <h2 class="shop-title">🛒 Click Upgrade Shop</h2>
+        <div class="shop-grid">
+            <div class="shop-item item-auto">
+                <div>
+                    <strong>Basic Finger</strong><br>
+                    <small>+1 CPS (Owned: <span id="count-auto1">0</span>)</small>
+                </div>
+                <button class="shop-btn" id="btn-auto1" onclick="buyAutoClicker(1, 20, 'count-auto1', 'btn-auto1')">Cost: 20</button>
+            </div>
+            <div class="shop-item item-auto">
+                <div>
+                    <strong>Mega Clicker Bot</strong><br>
+                    <small>+5 CPS (Owned: <span id="count-auto2">0</span>)</small>
+                </div>
+                <button class="shop-btn" id="btn-auto2" onclick="buyAutoClicker(5, 100, 'count-auto2', 'btn-auto2')">Cost: 100</button>
+            </div>
+
+            <div class="shop-item">
+                <span>Invert Picture Filter</span>
+                <button class="shop-btn" id="btn-invert" onclick="buyFilter('invert(100%)', 'btn-invert', 15)">Cost: 15</button>
+            </div>
+            <div class="shop-item">
+                <span>Deep Sepia Filter</span>
+                <button class="shop-btn" id="btn-sepia" onclick="buyFilter('sepia(100%)', 'btn-sepia', 30)">Cost: 30</button>
+            </div>
+            <div class="shop-item">
+                <span>Psychedelic Filter</span>
+                <button class="shop-btn" id="btn-hue" onclick="buyFilter('hue-rotate(90deg) saturate(300%)', 'btn-hue', 50)">Cost: 50</button>
+            </div>
+            <div class="shop-item">
+                <span>Cyberpunk Background</span>
+                <button class="shop-btn" id="btn-theme" onclick="buyTheme('linear-gradient(135deg, #ff0055, #00ffcc)', 'btn-theme', 200)">Cost: 200</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
