@@ -197,3 +197,22 @@ h1 {
 .item-auto small {
     color: #aaa;
 }
+
+/* Add this at the absolute bottom of style.css */
+.music-btn {
+    margin-top: 5px;
+    padding: 6px 12px;
+    background-color: rgba(107, 224, 255, 0.1);
+    color: #6be0ff;
+    border: 1px solid rgba(107, 224, 255, 0.4);
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.8rem;
+    font-weight: bold;
+    transition: all 0.2s;
+}
+
+.music-btn:hover {
+    background-color: #6be0ff;
+    color: #12121f;
+}
