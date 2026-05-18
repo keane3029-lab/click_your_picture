@@ -16,7 +16,7 @@ let audioCtx = null;
 let musicInterval = null;
 let isMusicPlaying = false;
 let currentStep = 0;
-// A cool chiptune synth melody loop sequence
+// Retro chiptune melody track
 const melody = [261.63, 293.66, 329.63, 392.00, 349.23, 329.63, 293.66, 392.00]; 
 
 const scoreDisplay = document.getElementById('score');
@@ -31,7 +31,9 @@ const musicBtn = document.getElementById('music-toggle-btn');
 // Create combo element dynamically
 const comboDisplay = document.createElement('div');
 comboDisplay.className = 'combo-box';
-document.querySelector('.header-container').appendChild(comboDisplay);
+if (document.querySelector('.header-container')) {
+    document.querySelector('.header-container').appendChild(comboDisplay);
+}
 
 // Init views
 scoreDisplay.textContent = clicks;
@@ -40,7 +42,7 @@ targetImg.style.filter = activeFilter;
 document.body.style.background = activeTheme;
 updateAutoClickerUI();
 
-// Safe Audio Context Instantiation
+// Safe Audio Context Init
 function initAudio() {
     if (!audioCtx) {
         audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -73,24 +75,21 @@ function startBackgroundMusic() {
     initAudio();
     if (isMusicPlaying) return;
     isMusicPlaying = true;
-    musicBtn.textContent = "🎵 Music: ON";
+    if (musicBtn) musicBtn.textContent = "🎵 Music: ON";
 
-    // Play a note every 250 milliseconds (120 BPM)
     musicInterval = setInterval(() => {
         if (!audioCtx) return;
         
         const osc = audioCtx.createOscillator();
         const gain = audioCtx.createGain();
         
-        osc.type = 'triangle'; // Gives a nice clean 8-bit sound
+        osc.type = 'triangle'; 
         
-        // Alter melody pitch depending on combo level
         let freq = melody[currentStep];
         if (combo > 5) freq *= 1.5; 
         
         osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
         
-        // Low volume so it stays background music
         gain.gain.setValueAtTime(0.04, audioCtx.currentTime);
         gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.22);
         
@@ -107,17 +106,19 @@ function startBackgroundMusic() {
 function stopBackgroundMusic() {
     clearInterval(musicInterval);
     isMusicPlaying = false;
-    musicBtn.textContent = "🎵 Music: OFF";
+    if (musicBtn) musicBtn.textContent = "🎵 Music: OFF";
 }
 
 // Music Button Handler
-musicBtn.addEventListener('click', () => {
-    if (isMusicPlaying) {
-        stopBackgroundMusic();
-    } else {
-        startBackgroundMusic();
-    }
-});
+if (musicBtn) {
+    musicBtn.addEventListener('click', () => {
+        if (isMusicPlaying) {
+            stopBackgroundMusic();
+        } else {
+            startBackgroundMusic();
+        }
+    });
+}
 
 // Manual User Click Trigger
 targetImg.addEventListener('click', (e) => {
@@ -249,14 +250,18 @@ function updateAutoClickerUI() {
     const cost1 = Math.floor(20 * Math.pow(1.15, autoClickers.type1));
     const cost2 = Math.floor(100 * Math.pow(1.15, autoClickers.type2));
 
-    document.getElementById('count-auto1').textContent = autoClickers.type1;
-    document.getElementById('btn-auto1').textContent = `Cost: ${cost1}`;
+    const el1 = document.getElementById('count-auto1');
+    const btn1 = document.getElementById('btn-auto1');
+    const el2 = document.getElementById('count-auto2');
+    const btn2 = document.getElementById('btn-auto2');
 
-    document.getElementById('count-auto2').textContent = autoClickers.type2;
-    document.getElementById('btn-auto2').textContent = `Cost: ${cost2}`;
+    if(el1) el1.textContent = autoClickers.type1;
+    if(btn1) btn1.textContent = `Cost: ${cost1}`;
+    if(el2) el2.textContent = autoClickers.type2;
+    if(btn2) btn2.textContent = `Cost: ${cost2}`;
 
     currentCPS = (autoClickers.type1 * 1) + (autoClickers.type2 * 5);
-    cpsDisplay.textContent = currentCPS;
+    if(cpsDisplay) cpsDisplay.textContent = currentCPS;
 }
 
 // Game Core Loop
@@ -272,27 +277,29 @@ setInterval(() => {
     }
 }, 1000);
 
-// Reset Action
-resetBtn.addEventListener('click', () => {
-    if (confirm("Are you sure you want to reset your clicks and shop upgrades? Your High Score will be saved!")) {
-        clicks = 0;
-        autoClickers = { type1: 0, type2: 0 };
-        
-        localStorage.setItem('clicks', clicks);
-        localStorage.setItem('autoClickers', JSON.stringify(autoClickers));
-        
-        activeFilter = 'none';
-        activeTheme = 'linear-gradient(135deg, #12121f, #1a1a2e)';
-        targetImg.style.filter = activeFilter;
-        document.body.style.background = activeTheme;
-        localStorage.setItem('activeFilter', activeFilter);
-        localStorage.setItem('activeTheme', activeTheme);
+// RESET BUTTON ACTION
+if (resetBtn) {
+    resetBtn.addEventListener('click', () => {
+        if (confirm("Are you sure you want to reset your clicks and shop upgrades? Your High Score will be saved!")) {
+            clicks = 0;
+            autoClickers = { type1: 0, type2: 0 };
+            
+            localStorage.setItem('clicks', clicks);
+            localStorage.setItem('autoClickers', JSON.stringify(autoClickers));
+            
+            activeFilter = 'none';
+            activeTheme = 'linear-gradient(135deg, #12121f, #1a1a2e)';
+            targetImg.style.filter = activeFilter;
+            document.body.style.background = activeTheme;
+            localStorage.setItem('activeFilter', activeFilter);
+            localStorage.setItem('activeTheme', activeTheme);
 
-        stopBackgroundMusic();
-        processScoreUpdate();
-        updateAutoClickerUI();
-    }
-});
+            stopBackgroundMusic();
+            processScoreUpdate();
+            updateAutoClickerUI();
+        }
+    });
+}
 
 // Cosmetic Operations
 function buyFilter(filterStyle, btnId, cost) {
@@ -319,21 +326,30 @@ function updateShopButtons() {
     const cost1 = Math.floor(20 * Math.pow(1.15, autoClickers.type1));
     const cost2 = Math.floor(100 * Math.pow(1.15, autoClickers.type2));
 
-    document.getElementById('btn-auto1').disabled = clicks < cost1;
-    document.getElementById('btn-auto2').disabled = clicks < cost2;
-    document.getElementById('btn-invert').disabled = clicks < 15;
-    document.getElementById('btn-sepia').disabled = clicks < 30;
-    document.getElementById('btn-hue').disabled = clicks < 50;
-    document.getElementById('btn-theme').disabled = clicks < 200;
+    const btn1 = document.getElementById('btn-auto1');
+    const btn2 = document.getElementById('btn-auto2');
+    const btnInvert = document.getElementById('btn-invert');
+    const btnSepia = document.getElementById('btn-sepia');
+    const btnHue = document.getElementById('btn-hue');
+    const btnTheme = document.getElementById('btn-theme');
+
+    if(btn1) btn1.disabled = clicks < cost1;
+    if(btn2) btn2.disabled = clicks < cost2;
+    if(btnInvert) btnInvert.disabled = clicks < 15;
+    if(btnSepia) btnSepia.disabled = clicks < 30;
+    if(btnHue) btnHue.disabled = clicks < 50;
+    if(btnTheme) btnTheme.disabled = clicks < 200;
 }
 
-fileInput.addEventListener('change', (e) => {
-    const file = e.target.files[0];
-    if (file) {
-        const reader = new FileReader();
-        reader.onload = (event) => targetImg.src = event.target.result;
-        reader.readAsDataURL(file);
-    }
-});
+if(fileInput) {
+    fileInput.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = (event) => targetImg.src = event.target.result;
+            reader.readAsDataURL(file);
+        }
+    });
+}
 
 updateShopButtons();
