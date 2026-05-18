@@ -89,34 +89,77 @@ function startBackgroundMusic() {
         
         osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
         
-        // BOOSTED THE MUSIC GAIN ENVELOPE SIGNIFICANTLY
-        gain.gain.setValueAtTime(0.40, audioCtx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.24);
+      // DOUBLE-AMPLIFIED LOUD Click Sounds
+function playInteractiveSound(isAuto = false) {
+    initAudio();
+    if (!audioCtx) return;
+
+    // We spawn MULTIPLE oscillators at the exact same time to layer the sound
+    for (let i = 0; i < 3; i++) {
+        const osc = audioCtx.createOscillator();
+        const stage1Gain = audioCtx.createGain();
+        const stage2Gain = audioCtx.createGain(); // The Booster Stage
         
-        osc.connect(gain);
-        gain.connect(audioCtx.destination);
+        osc.type = 'sawtooth'; // Harsh, crunchy retro wave
+        const baseFreq = isAuto ? (150 + i * 10) : (300 + (combo * 40) + i * 15); 
+        osc.frequency.setValueAtTime(baseFreq, audioCtx.currentTime);
+        
+        // Max out Stage 1
+        stage1Gain.gain.setValueAtTime(isAuto ? 0.4 : 1.0, audioCtx.currentTime);
+        stage1Gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.15);
+        
+        // Max out Stage 2 (Force amplification)
+        stage2Gain.gain.setValueAtTime(isAuto ? 1.5 : 3.0, audioCtx.currentTime);
+        
+        // Chain them together: Osc -> Amp 1 -> Amp 2 -> Speakers
+        osc.connect(stage1Gain);
+        stage1Gain.connect(stage2Gain);
+        stage2Gain.connect(audioCtx.destination);
         
         osc.start();
-        osc.stop(audioCtx.currentTime + 0.25);
+        osc.stop(audioCtx.currentTime + 0.15);
+    }
+}
+
+// DOUBLE-AMPLIFIED LOUD Background Music Loop
+function startBackgroundMusic() {
+    initAudio();
+    if (isMusicPlaying) return;
+    isMusicPlaying = true;
+    if (musicBtn) musicBtn.textContent = "🎵 Music: ON";
+
+    musicInterval = setInterval(() => {
+        if (!audioCtx) return;
+        
+        // Overlap two square waves slightly detuned for massive retro chiptune volume
+        [0, 4].forEach((detuneOffset) => {
+            const osc = audioCtx.createOscillator();
+            const amp1 = audioCtx.createGain();
+            const amp2 = audioCtx.createGain(); // Booster wall
+            
+            osc.type = 'square'; // The loudest raw wave type
+            
+            let freq = melody[currentStep];
+            if (combo > 5) freq *= 1.5; 
+            
+            osc.frequency.setValueAtTime(freq + detuneOffset, audioCtx.currentTime);
+            
+            // Blast both gain nodes
+            amp1.gain.setValueAtTime(0.8, audioCtx.currentTime);
+            amp1.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.24);
+            
+            amp2.gain.setValueAtTime(2.5, audioCtx.currentTime); // Force boost past browser compression
+            
+            osc.connect(amp1);
+            amp1.connect(amp2);
+            amp2.connect(audioCtx.destination);
+            
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.25);
+        });
         
         currentStep = (currentStep + 1) % melody.length;
     }, 250);
-}
-
-function stopBackgroundMusic() {
-    clearInterval(musicInterval);
-    isMusicPlaying = false;
-    if (musicBtn) musicBtn.textContent = "🎵 Music: OFF";
-}
-
-if (musicBtn) {
-    musicBtn.addEventListener('click', () => {
-        if (isMusicPlaying) {
-            stopBackgroundMusic();
-        } else {
-            startBackgroundMusic();
-        }
-    });
 }
 
 // Manual User Click Trigger
