@@ -11,12 +11,11 @@ let currentCPS = 0;
 let combo = 0;
 let comboTimer = null;
 
-// Audio System Variables
+// Audio System Variables (CRANKED UP)
 let audioCtx = null;
 let musicInterval = null;
 let isMusicPlaying = false;
 let currentStep = 0;
-// Retro chiptune melody track
 const melody = [261.63, 293.66, 329.63, 392.00, 349.23, 329.63, 293.66, 392.00]; 
 
 const scoreDisplay = document.getElementById('score');
@@ -42,14 +41,13 @@ targetImg.style.filter = activeFilter;
 document.body.style.background = activeTheme;
 updateAutoClickerUI();
 
-// Safe Audio Context Init
 function initAudio() {
     if (!audioCtx) {
         audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     }
 }
 
-// Synthesizes dynamic click retro sounds
+// LOUD Click Sounds
 function playInteractiveSound(isAuto = false) {
     initAudio();
     if (!audioCtx) return;
@@ -61,16 +59,17 @@ function playInteractiveSound(isAuto = false) {
     const baseFreq = isAuto ? 180 : 300 + (combo * 40); 
     osc.frequency.setValueAtTime(baseFreq, audioCtx.currentTime);
     
-    gain.gain.setValueAtTime(isAuto ? 0.02 : 0.12, audioCtx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.08);
+    // MAX VOLUME MULTIPLIERS FOR CLICKS
+    gain.gain.setValueAtTime(isAuto ? 0.25 : 0.90, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.12);
     
     osc.connect(gain);
     gain.connect(audioCtx.destination);
     osc.start();
-    osc.stop(audioCtx.currentTime + 0.08);
+    osc.stop(audioCtx.currentTime + 0.12);
 }
 
-// Chiptune background sequencer loop engine
+// LOUD Background Music Loop
 function startBackgroundMusic() {
     initAudio();
     if (isMusicPlaying) return;
@@ -83,15 +82,16 @@ function startBackgroundMusic() {
         const osc = audioCtx.createOscillator();
         const gain = audioCtx.createGain();
         
-        osc.type = 'triangle'; 
+        osc.type = 'square'; // Changed to 'square' wave because it is naturally much louder and crunchier!
         
         let freq = melody[currentStep];
         if (combo > 5) freq *= 1.5; 
         
         osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
         
-        gain.gain.setValueAtTime(0.04, audioCtx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.22);
+        // BOOSTED THE MUSIC GAIN ENVELOPE SIGNIFICANTLY
+        gain.gain.setValueAtTime(0.40, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.24);
         
         osc.connect(gain);
         gain.connect(audioCtx.destination);
@@ -109,7 +109,6 @@ function stopBackgroundMusic() {
     if (musicBtn) musicBtn.textContent = "🎵 Music: OFF";
 }
 
-// Music Button Handler
 if (musicBtn) {
     musicBtn.addEventListener('click', () => {
         if (isMusicPlaying) {
@@ -146,7 +145,6 @@ function processScoreUpdate() {
     updateShopButtons();
 }
 
-// Interactive Combo Engine
 function handleCombo() {
     combo++;
     clearTimeout(comboTimer);
@@ -165,7 +163,6 @@ function handleCombo() {
     }, 1200);
 }
 
-// 3D Tilt Physics Engine
 function calculateTiltPhysics(e) {
     const rect = targetImg.getBoundingClientRect();
     const x = (e.clientX - rect.left) / rect.width - 0.5;
@@ -179,7 +176,6 @@ function calculateTiltPhysics(e) {
     }, 80);
 }
 
-// Particle Engine
 function spawnSparks(e) {
     const rect = imageWrapper.getBoundingClientRect();
     const clickX = e.clientX - rect.left;
@@ -205,7 +201,6 @@ function spawnSparks(e) {
     }
 }
 
-// Score Pop-up Text Generator
 function spawnFloatingText(e, text) {
     let x, y;
     if (e) {
@@ -228,7 +223,6 @@ function spawnFloatingText(e, text) {
     setTimeout(() => float.remove(), 400);
 }
 
-// Auto Clicker Operations
 function buyAutoClicker(cpsValue, baseCost, countId, btnId) {
     const currentOwned = cpsValue === 1 ? autoClickers.type1 : autoClickers.type2;
     const calculatedCost = Math.floor(baseCost * Math.pow(1.15, currentOwned));
@@ -277,7 +271,6 @@ setInterval(() => {
     }
 }, 1000);
 
-// RESET BUTTON ACTION
 if (resetBtn) {
     resetBtn.addEventListener('click', () => {
         if (confirm("Are you sure you want to reset your clicks and shop upgrades? Your High Score will be saved!")) {
@@ -301,7 +294,6 @@ if (resetBtn) {
     });
 }
 
-// Cosmetic Operations
 function buyFilter(filterStyle, btnId, cost) {
     if (clicks >= cost) {
         clicks -= cost;
