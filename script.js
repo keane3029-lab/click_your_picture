@@ -11,12 +11,22 @@ let currentCPS = 0;
 let combo = 0;
 let comboTimer = null;
 
+// Audio System Variables
+let audioCtx = null;
+let musicInterval = null;
+let isMusicPlaying = false;
+let currentStep = 0;
+// A cool chiptune synth melody loop sequence
+const melody = [261.63, 293.66, 329.63, 392.00, 349.23, 329.63, 293.66, 392.00]; 
+
 const scoreDisplay = document.getElementById('score');
 const cpsDisplay = document.getElementById('cps-display');
 const highScoreDisplay = document.getElementById('high-score');
 const targetImg = document.getElementById('target-img');
 const imageWrapper = document.getElementById('image-wrapper');
 const fileInput = document.getElementById('file-input');
+const resetBtn = document.getElementById('reset-game-btn');
+const musicBtn = document.getElementById('music-toggle-btn');
 
 // Create combo element dynamically
 const comboDisplay = document.createElement('div');
@@ -30,24 +40,84 @@ targetImg.style.filter = activeFilter;
 document.body.style.background = activeTheme;
 updateAutoClickerUI();
 
-// Synthesizes dynamic retro sounds
+// Safe Audio Context Instantiation
+function initAudio() {
+    if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+}
+
+// Synthesizes dynamic click retro sounds
 function playInteractiveSound(isAuto = false) {
-    const ctx = new (window.AudioContext || window.webkitAudioContext)();
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
+    initAudio();
+    if (!audioCtx) return;
+
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
     
     osc.type = combo > 5 && !isAuto ? 'sawtooth' : 'sine';
-    const baseFreq = isAuto ? 200 : 300 + (combo * 40); 
-    osc.frequency.setValueAtTime(baseFreq, ctx.currentTime);
+    const baseFreq = isAuto ? 180 : 300 + (combo * 40); 
+    osc.frequency.setValueAtTime(baseFreq, audioCtx.currentTime);
     
-    gain.gain.setValueAtTime(isAuto ? 0.03 : 0.15, ctx.currentTime); // Auto clicks are quieter
-    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.08);
+    gain.gain.setValueAtTime(isAuto ? 0.02 : 0.12, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.08);
     
     osc.connect(gain);
-    gain.connect(ctx.destination);
+    gain.connect(audioCtx.destination);
     osc.start();
-    osc.stop(ctx.currentTime + 0.08);
+    osc.stop(audioCtx.currentTime + 0.08);
 }
+
+// Chiptune background sequencer loop engine
+function startBackgroundMusic() {
+    initAudio();
+    if (isMusicPlaying) return;
+    isMusicPlaying = true;
+    musicBtn.textContent = "🎵 Music: ON";
+
+    // Play a note every 250 milliseconds (120 BPM)
+    musicInterval = setInterval(() => {
+        if (!audioCtx) return;
+        
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        
+        osc.type = 'triangle'; // Gives a nice clean 8-bit sound
+        
+        // Alter melody pitch depending on combo level
+        let freq = melody[currentStep];
+        if (combo > 5) freq *= 1.5; 
+        
+        osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+        
+        // Low volume so it stays background music
+        gain.gain.setValueAtTime(0.04, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.22);
+        
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.25);
+        
+        currentStep = (currentStep + 1) % melody.length;
+    }, 250);
+}
+
+function stopBackgroundMusic() {
+    clearInterval(musicInterval);
+    isMusicPlaying = false;
+    musicBtn.textContent = "🎵 Music: OFF";
+}
+
+// Music Button Handler
+musicBtn.addEventListener('click', () => {
+    if (isMusicPlaying) {
+        stopBackgroundMusic();
+    } else {
+        startBackgroundMusic();
+    }
+});
 
 // Manual User Click Trigger
 targetImg.addEventListener('click', (e) => {
@@ -57,7 +127,6 @@ targetImg.addEventListener('click', (e) => {
     clicks += pointsGained;
     
     processScoreUpdate();
-
     playInteractiveSound(false);
     calculateTiltPhysics(e);
     spawnSparks(e);
@@ -76,7 +145,7 @@ function processScoreUpdate() {
     updateShopButtons();
 }
 
-// 1. Interactive Combo Engine
+// Interactive Combo Engine
 function handleCombo() {
     combo++;
     clearTimeout(comboTimer);
@@ -95,7 +164,7 @@ function handleCombo() {
     }, 1200);
 }
 
-// 2. 3D Tilt Physics Engine
+// 3D Tilt Physics Engine
 function calculateTiltPhysics(e) {
     const rect = targetImg.getBoundingClientRect();
     const x = (e.clientX - rect.left) / rect.width - 0.5;
@@ -109,7 +178,7 @@ function calculateTiltPhysics(e) {
     }, 80);
 }
 
-// 3. Particle Engine
+// Particle Engine
 function spawnSparks(e) {
     const rect = imageWrapper.getBoundingClientRect();
     const clickX = e.clientX - rect.left;
@@ -135,7 +204,7 @@ function spawnSparks(e) {
     }
 }
 
-// 4. Score Pop-up Text Generator
+// Score Pop-up Text Generator
 function spawnFloatingText(e, text) {
     let x, y;
     if (e) {
@@ -143,7 +212,6 @@ function spawnFloatingText(e, text) {
         x = e.clientX - rect.left;
         y = e.clientY - rect.top;
     } else {
-        // Center offsets for automatic text pops
         x = 110 + (Math.random() * 40 - 20);
         y = 110 + (Math.random() * 40 - 20);
     }
@@ -153,16 +221,14 @@ function spawnFloatingText(e, text) {
     float.textContent = text;
     float.style.left = `${x}px`;
     float.style.top = `${y}px`;
-    if(!e) float.style.color = '#6be0ff'; // Blue numbers for bot clicks
+    if(!e) float.style.color = '#6be0ff';
 
     imageWrapper.appendChild(float);
     setTimeout(() => float.remove(), 400);
 }
 
-// --- AUTO CLICKER LOGIC ---
-
+// Auto Clicker Operations
 function buyAutoClicker(cpsValue, baseCost, countId, btnId) {
-    // Scaling Cost Formula: Cost rises based on infrastructure size
     const currentOwned = cpsValue === 1 ? autoClickers.type1 : autoClickers.type2;
     const calculatedCost = Math.floor(baseCost * Math.pow(1.15, currentOwned));
 
@@ -180,7 +246,6 @@ function buyAutoClicker(cpsValue, baseCost, countId, btnId) {
 }
 
 function updateAutoClickerUI() {
-    // Calculate current cost dynamically
     const cost1 = Math.floor(20 * Math.pow(1.15, autoClickers.type1));
     const cost2 = Math.floor(100 * Math.pow(1.15, autoClickers.type2));
 
@@ -194,7 +259,7 @@ function updateAutoClickerUI() {
     cpsDisplay.textContent = currentCPS;
 }
 
-// Core Game Loop Execution - Triggers every 1 second
+// Game Core Loop
 setInterval(() => {
     if (currentCPS > 0) {
         clicks += currentCPS;
@@ -202,11 +267,32 @@ setInterval(() => {
         playInteractiveSound(true);
         spawnFloatingText(null, `+${currentCPS}`);
         
-        // Minor visual pop effect on the target image to show bot interaction
         targetImg.style.transform = 'scale(0.97)';
         setTimeout(() => targetImg.style.transform = 'scale(1)', 50);
     }
 }, 1000);
+
+// Reset Action
+resetBtn.addEventListener('click', () => {
+    if (confirm("Are you sure you want to reset your clicks and shop upgrades? Your High Score will be saved!")) {
+        clicks = 0;
+        autoClickers = { type1: 0, type2: 0 };
+        
+        localStorage.setItem('clicks', clicks);
+        localStorage.setItem('autoClickers', JSON.stringify(autoClickers));
+        
+        activeFilter = 'none';
+        activeTheme = 'linear-gradient(135deg, #12121f, #1a1a2e)';
+        targetImg.style.filter = activeFilter;
+        document.body.style.background = activeTheme;
+        localStorage.setItem('activeFilter', activeFilter);
+        localStorage.setItem('activeTheme', activeTheme);
+
+        stopBackgroundMusic();
+        processScoreUpdate();
+        updateAutoClickerUI();
+    }
+});
 
 // Cosmetic Operations
 function buyFilter(filterStyle, btnId, cost) {
